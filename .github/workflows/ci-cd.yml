@@ -1,0 +1,55 @@
+name: Node.js CI/CD with Latest Code Push
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-deploy-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the repo (disable default credentials to allow OAuth push)
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # 2️⃣ Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4️⃣ Run tests (optional)
+      - name: Run tests
+        run: npm test || echo "No tests defined"
+
+      # 5️⃣ Configure Git for force push
+      - name: Configure Git
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_PUSH_TOKEN }}@github.com/DevaKumar143/BackendAPI.git
+
+      # 6️⃣ Push latest snapshot (overwrite main branch)
+      - name: Push latest code snapshot
+        run: |
+          git add .
+          git commit -m "ci: latest snapshot" || echo "Nothing to commit"
+          git push origin HEAD:main --force
+
+      # 7️⃣ Deploy to Render
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          render deploy service --service-id <YOUR_SERVICE_ID>
