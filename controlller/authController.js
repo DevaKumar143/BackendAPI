@@ -19,10 +19,10 @@ exports.register =
         return res.status(400).json({ errors: "Please Enter a Unique Email" });
       }
 
-      const salt = bcrypt.genSaltSync(10);
-      const hashpass = bcrypt.hashSync(req.body.password, salt);
+      const salt = bcrypt.genSalt(10);
+      const hashpass = bcrypt.hash(req.body.password, salt);
 
-      user = User.create({
+      user = await User.create({
         name: req.body.name,
         email: req.body.email ,
         password: hashpass,
